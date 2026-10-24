@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Kinerja Livestream Ovikids — Shopee Fashion Anak</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN untuk Grafik Batang Interaktif -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            800: '#1e293b',
+                            900: '#101b33',
+                            950: '#0b1324',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .summary-row { background-color: #ebf5ff !important; font-weight: 700; }
+        .average-row { background-color: #fef3c7 !important; font-weight: 700; }
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { background-color: #334155 !important; color: #38bdf8; }
+    </style>
+</head>
+<body class="h-full text-slate-800 antialiased flex flex-col">
+
+    <!-- Header Utama Ovikids -->
+    <header class="bg-[#101b33] text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
+            <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    <h1 id="headerTitle" class="text-xs sm:text-sm lg:text-base font-bold tracking-wide uppercase truncate">OVIKIDS — DASHBOARD KINERJA LIVESTREAM SHOPEE</h1>
+                </div>
+                <p id="mainSubtitle" class="text-[11px] sm:text-xs text-slate-300 mt-0.5 truncate">Shopee Fashion Anak | Memuat data sesi...</p>
+            </div>
+
+            <!-- Kontrol Filter Periode Kalender Global & Tombol Aksi -->
+            <div class="flex flex-wrap items-center justify-between lg:justify-end gap-2 pt-1 lg:pt-0 border-t border-slate-700/60 lg:border-t-0">
+                <div class="flex items-center gap-1 bg-[#0b1324] px-2 py-1.5 rounded-lg border border-slate-700 text-[11px]">
+                    <span class="text-[10px] font-bold text-sky-400 uppercase">Periode:</span>
+                    <input type="date" id="globalFilterStart" onchange="applyGlobalFilter()" class="bg-slate-900 border border-slate-600 text-[10px] sm:text-[11px] text-white rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-sky-400 cursor-pointer">
+                    <span class="text-slate-400 text-xs">s/d</span>
+                    <input type="date" id="globalFilterEnd" onchange="applyGlobalFilter()" class="bg-slate-900 border border-slate-600 text-[10px] sm:text-[11px] text-white rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-sky-400 cursor-pointer">
+                    <button onclick="resetGlobalFilter()" class="text-[10px] text-slate-400 hover:text-white underline ml-0.5 cursor-pointer">Reset</button>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <button onclick="fetchSheetData()" class="bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shadow transition flex items-center gap-1 cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Segarkan
+                    </button>
+                    <button onclick="openAdminModal()" class="bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shadow transition flex items-center gap-1 cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Admin
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigasi Responsif -->
+        <nav class="bg-[#0b1324] border-t border-slate-700/50">
+            <div class="max-w-7xl mx-auto px-3 sm:px-4 flex overflow-x-auto custom-scrollbar space-x-1.5 py-2">
+                <button onclick="switchTab(1)" id="tabBtn1" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-600 text-white whitespace-nowrap transition cursor-pointer shrink-0">1. Data Terstruktur</button>
+                <button onclick="switchTab(2)" id="tabBtn2" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white whitespace-nowrap transition cursor-pointer shrink-0">2. Harian & Rata-Rata</button>
+                <button onclick="switchTab(3)" id="tabBtn3" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white whitespace-nowrap transition cursor-pointer shrink-0">3. Rata-Rata Kinerja</button>
+                <button onclick="switchTab(4)" id="tabBtn4" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white whitespace-nowrap transition cursor-pointer shrink-0">4. Laporan Kinerja</button>
+                <button onclick="switchTab(5)" id="tabBtn5" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>5. Komparasi Hari</button>
+                <button onclick="switchTab(6)" id="tabBtn6" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>6. Komparasi Mingguan</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Konten Utama -->
+    <main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-grow w-full space-y-4 sm:space-y-6">
+
+        <!-- ================= TAB 1: DATA TERSTRUKTUR ================= -->
+        <div id="tabContent1" class="tab-content space-y-4 sm:space-y-6">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Penjualan</p>
+                    <p id="sumSales" class="text-xs sm:text-sm lg:text-base font-extrabold text-blue-600 mt-1 truncate">Rp0</p>
+                    <p id="labelCountSales" class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">akumulasi sesi</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Pesanan</p>
+                    <p id="sumOrders" class="text-xs sm:text-sm lg:text-base font-extrabold text-slate-900 mt-1 truncate">0</p>
+                    <p id="labelCountOrders" class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">akumulasi sesi</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Penonton Aktif</p>
+                    <p id="sumViewers" class="text-xs sm:text-sm lg:text-base font-extrabold text-slate-900 mt-1 truncate">0</p>
+                    <p id="labelCountViewers" class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">akumulasi sesi</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Masuk Keranjang</p>
+                    <p id="sumCart" class="text-xs sm:text-sm lg:text-base font-extrabold text-slate-900 mt-1 truncate">0</p>
+                    <p id="labelCountCart" class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">akumulasi sesi</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Ditonton</p>
+                    <p id="sumWatched" class="text-xs sm:text-sm lg:text-base font-extrabold text-slate-900 mt-1 truncate">0</p>
+                    <p id="labelCountWatched" class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">akumulasi sesi</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Komentar</p>
+                    <p id="sumComments" class="text-xs sm:text-sm lg:text-base font-extrabold text-slate-900 mt-1 truncate">0</p>
+                    <p id="labelCountComments" class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">akumulasi sesi</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-[#101b33] text-white px-4 py-2.5 font-bold text-xs uppercase tracking-wide flex justify-between items-center">
+                    <span>1. Data Harian</span>
+                    <span id="sortStatusIndicator" class="text-[10px] text-sky-400 font-normal">Urutan: Default</span>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-[#1e293b] text-slate-200 font-semibold border-b border-slate-700">
+                                <th onclick="sortTable('date')" class="p-3 sortable">Tanggal ↕</th>
+                                <th onclick="sortTable('sales')" class="p-3 sortable">Penjualan ↕</th>
+                                <th onclick="sortTable('orders')" class="p-3 text-center sortable">Pesanan ↕</th>
+                                <th onclick="sortTable('activeViewers')" class="p-3 text-center sortable">Penonton aktif ↕</th>
+                                <th onclick="sortTable('cart')" class="p-3 text-center sortable">Masuk keranjang ↕</th>
+                                <th onclick="sortTable('clickRate')" class="p-3 text-center sortable">Klik (%) ↕</th>
+                                <th onclick="sortTable('orderPerClick')" class="p-3 text-center sortable">Pesanan/ Klik (%) ↕</th>
+                                <th onclick="sortTable('watched')" class="p-3 text-center sortable">Ditonton ↕</th>
+                                <th onclick="sortTable('duration')" class="p-3 text-center sortable">Durasi ↕</th>
+                                <th onclick="sortTable('comments')" class="p-3 text-center sortable">Komentar ↕</th>
+                                <th onclick="sortTable('commentRate')" class="p-3 text-center sortable">Komentar (%) ↕</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyTab1" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+                <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                    <div class="bg-[#101b33] text-white px-4 py-2.5 font-bold text-xs uppercase tracking-wide">
+                        2. Interaksi & Sumber Trafik Ovikids
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar flex-grow">
+                        <table class="w-full text-left text-xs whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold">
+                                    <th class="p-3">Metrik</th>
+                                    <th class="p-3 text-center">Jumlah (Total)</th>
+                                    <th class="p-3 text-center">Rata-rata per sesi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr>
+                                    <td class="p-3 font-medium">Penonton puncak</td>
+                                    <td class="p-3 text-center text-slate-400 italic">Tidak dijumlahkan</td>
+                                    <td id="avgPeakViewers" class="p-3 text-center font-semibold">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-medium">Disukai</td>
+                                    <td id="totalLikes" class="p-3 text-center font-semibold">0</td>
+                                    <td id="avgLikes" class="p-3 text-center font-semibold">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-medium">Dibagikan</td>
+                                    <td id="totalShares" class="p-3 text-center font-semibold">0</td>
+                                    <td id="avgShares" class="p-3 text-center font-semibold">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-xs text-slate-700 uppercase tracking-wide mb-4">Rata-rata Sumber Trafik Shopee</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1">
+                                    <span>Tab Live & Video</span>
+                                    <span id="labelTrafficLive" class="text-sky-600">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                                    <div id="barTrafficLive" class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1">
+                                    <span>Beranda</span>
+                                    <span id="labelTrafficHome" class="text-sky-600">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                                    <div id="barTrafficHome" class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1">
+                                    <span>Rekomendasi</span>
+                                    <span id="labelTrafficRec" class="text-sky-600">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                                    <div id="barTrafficRec" class="bg-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: DASHBOARD HARIAN & RATA-RATA ================= -->
+        <div id="tabContent2" class="tab-content space-y-4 sm:space-y-6 hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-[#101b33] text-white px-4 py-3 flex justify-between items-center">
+                    <h2 class="font-bold text-xs uppercase tracking-wide">1. Data Utama Harian Ovikids</h2>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-[#1e293b] text-slate-200 font-semibold border-b border-slate-700">
+                                <th onclick="sortTable('date')" class="p-3 sortable">Tanggal ↕</th>
+                                <th onclick="sortTable('sales')" class="p-3 sortable">Penjualan ↕</th>
+                                <th onclick="sortTable('orders')" class="p-3 text-center sortable">Pesanan ↕</th>
+                                <th onclick="sortTable('activeViewers')" class="p-3 text-center sortable">Penonton aktif ↕</th>
+                                <th onclick="sortTable('cart')" class="p-3 text-center sortable">Masuk keranjang ↕</th>
+                                <th onclick="sortTable('clickRate')" class="p-3 text-center sortable">Klik (%) ↕</th>
+                                <th onclick="sortTable('orderPerClick')" class="p-3 text-center sortable">Pesanan per klik (%) ↕</th>
+                                <th onclick="sortTable('watched')" class="p-3 text-center sortable">Ditonton ↕</th>
+                                <th onclick="sortTable('duration')" class="p-3 text-center sortable">Durasi ↕</th>
+                                <th onclick="sortTable('comments')" class="p-3 text-center sortable">Komentar ↕</th>
+                                <th onclick="sortTable('commentRate')" class="p-3 text-center sortable">Komentar (%) ↕</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyTab2" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-[#101b33] text-white px-4 py-3 flex justify-between items-center">
+                    <h2 class="font-bold text-xs uppercase tracking-wide">2. Interaksi & Sumber Trafik Shopee</h2>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold">
+                                <th class="p-3">Tanggal</th>
+                                <th class="p-3 text-center">Penonton puncak</th>
+                                <th class="p-3 text-center">Disukai</th>
+                                <th class="p-3 text-center">Dibagikan</th>
+                                <th class="p-3 text-center">Tab Live & Video</th>
+                                <th class="p-3 text-center">Beranda</th>
+                                <th class="p-3 text-center">Rekomendasi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyTab2Traffic" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: RATA-RATA KINERJA ================= -->
+        <div id="tabContent3" class="tab-content space-y-4 sm:space-y-6 hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Rata-Rata Penjualan</p>
+                    <p id="cardAvgSales" class="text-base sm:text-lg font-extrabold text-blue-600 mt-1">Rp0</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">per sesi</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Rata-Rata Pesanan</p>
+                    <p id="cardAvgOrders" class="text-base sm:text-lg font-extrabold text-slate-900 mt-1">0</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">pesanan per sesi</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Rata-Rata Tayangan</p>
+                    <p id="cardAvgWatched" class="text-base sm:text-lg font-extrabold text-slate-900 mt-1">0</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">tayangan per sesi</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Durasi Tonton Rata-Rata</p>
+                    <p id="cardAvgDuration" class="text-base sm:text-lg font-extrabold text-slate-900 mt-1">00:39</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">detik per penonton</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-[#101b33] text-white px-4 py-2.5 font-bold text-xs uppercase tracking-wide">Rata-rata Data Utama</div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                        <thead><tr class="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold"><th class="p-3">Metrik</th><th class="p-3">Rata-rata</th><th class="p-3">Satuan / catatan</th></tr></thead>
+                        <tbody id="tableAvgMain" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-[#101b33] text-white px-4 py-2.5 font-bold text-xs uppercase tracking-wide">Rata-rata Interaksi & Sumber Trafik</div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                        <thead><tr class="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold"><th class="p-3">Metrik</th><th class="p-3">Rata-rata</th><th class="p-3">Satuan / catatan</th></tr></thead>
+                        <tbody id="tableAvgTraffic" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: LAPORAN KINERJA ================= -->
+        <div id="tabContent4" class="tab-content space-y-4 sm:space-y-6 hidden">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Penjualan</p>
+                    <p id="repSumSales" class="text-base sm:text-lg font-extrabold text-blue-600 mt-1 truncate">Rp0</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Penjumlahan angka</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Pesanan</p>
+                    <p id="repSumOrders" class="text-base sm:text-lg font-extrabold text-slate-900 mt-1 truncate">0</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">pesanan tercatat</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Rata-Rata / Sesi</p>
+                    <p id="repAvgSales" class="text-base sm:text-lg font-extrabold text-slate-900 mt-1 truncate">Rp0</p>
+                    <p id="repCountSessi" class="text-[10px] text-slate-400 mt-0.5">Berdasarkan sesi aktif</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Sesi Terbaik</p>
+                    <p id="repBestSession" class="text-base sm:text-lg font-extrabold text-slate-900 mt-1 truncate">-</p>
+                    <p id="repBestSales" class="text-[10px] text-slate-400 mt-0.5">Rp0</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+                <div class="lg:col-span-7 bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-800">Penjualan per sesi Ovikids</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Nilai penjualan livestream (Juta Rp)</p>
+                    </div>
+                    <div class="my-4 h-56 sm:h-64 relative">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-slate-500 pt-2 border-t border-slate-100 font-medium gap-1">
+                        <span id="chartMaxSales">Puncak omzet: -</span>
+                        <span id="chartMinSales">Terendah: -</span>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-800 mb-3">Temuan Utama Ovikids</h3>
+                        <div id="dynamicInsightsContainer" class="space-y-3 text-xs">
+                            <div class="flex items-start gap-2.5"><span class="bg-sky-100 text-sky-700 font-bold px-2 py-0.5 rounded text-[10px]">01</span><p class="text-slate-600">Memuat analisis otomatis berdasarkan data aktif...</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 5: KOMPARASI ANTAR HARI ================= -->
+        <div id="tabContent5" class="tab-content space-y-4 sm:space-y-6 hidden">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b pb-4">
+                    <div>
+                        <h2 class="font-bold text-xs sm:text-sm text-slate-900 uppercase">Fitur Komparasi Antar Hari (Head-to-Head Kalender)</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Pilih tanggal melalui kalender untuk membandingkan performa dua sesi.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                        <div class="flex flex-col flex-grow sm:flex-grow-0">
+                            <label class="text-[10px] font-bold text-slate-600 mb-1">Tanggal Basis (A)</label>
+                            <input type="date" id="compareDateA" onchange="runComparison()" class="bg-slate-50 border border-slate-300 text-xs font-semibold rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
+                        </div>
+                        <div class="text-slate-400 font-bold self-end pb-2 hidden sm:block">VS</div>
+                        <div class="flex flex-col flex-grow sm:flex-grow-0">
+                            <label class="text-[10px] font-bold text-slate-600 mb-1">Tanggal Pembanding (B)</label>
+                            <input type="date" id="compareDateB" onchange="runComparison()" class="bg-slate-50 border border-slate-300 text-xs font-semibold rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabel Komparasi -->
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold">
+                                <th class="p-3">Metrik Kinerja</th>
+                                <th id="colHeaderA" class="p-3 text-center bg-sky-50 text-sky-900">Tanggal A</th>
+                                <th id="colHeaderB" class="p-3 text-center bg-indigo-50 text-indigo-900">Tanggal B</th>
+                                <th class="p-3 text-center">Selisih (B - A)</th>
+                                <th class="p-3 text-center">Perubahan (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analisis Otomatis -->
+            <div class="bg-sky-50 border border-sky-200 p-4 sm:p-5 rounded-2xl space-y-2 text-xs text-sky-900">
+                <h4 class="font-bold uppercase tracking-wide flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-sky-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Ringkasan Analisis Perbandingan Harian Ovikids
+                </h4>
+                <p id="comparisonSummaryText" class="text-xs text-sky-800 leading-relaxed">
+                    Pilih tanggal di kalender atas untuk melihat analisis perubahan kinerja secara otomatis.
+                </p>
+            </div>
+        </div>
+
+        <!-- ================= TAB 6: KOMPARASI MINGGUAN ================= -->
+        <div id="tabContent6" class="tab-content space-y-4 sm:space-y-6 hidden">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b pb-4">
+                    <div>
+                        <h2 class="font-bold text-xs sm:text-sm text-slate-900 uppercase">Fitur Komparasi Mingguan (Rentang Tanggal)</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Pilih rentang tanggal basis mingguan dan minggu pembanding untuk akumulasi.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-bold text-slate-600">Minggu Basis (A)</label>
+                            <div class="flex items-center gap-1">
+                                <input type="date" id="weekStartA" onchange="runWeeklyComparison()" class="bg-slate-50 border border-slate-300 text-[10px] sm:text-[11px] font-semibold rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer w-full">
+                                <span class="text-slate-400 text-xs">s/d</span>
+                                <input type="date" id="weekEndA" onchange="runWeeklyComparison()" class="bg-slate-50 border border-slate-300 text-[10px] sm:text-[11px] font-semibold rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer w-full">
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-bold text-slate-600">Minggu Pembanding (B)</label>
+                            <div class="flex items-center gap-1">
+                                <input type="date" id="weekStartB" onchange="runWeeklyComparison()" class="bg-slate-50 border border-slate-300 text-[10px] sm:text-[11px] font-semibold rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer w-full">
+                                <span class="text-slate-400 text-xs">s/d</span>
+                                <input type="date" id="weekEndB" onchange="runWeeklyComparison()" class="bg-slate-50 border border-slate-300 text-[10px] sm:text-[11px] font-semibold rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer w-full">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabel Komparasi Mingguan -->
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold">
+                                <th class="p-3">Metrik Akumulasi Mingguan</th>
+                                <th id="weeklyHeaderA" class="p-3 text-center bg-sky-50 text-sky-900">Minggu A</th>
+                                <th id="weeklyHeaderB" class="p-3 text-center bg-indigo-50 text-indigo-900">Minggu B</th>
+                                <th class="p-3 text-center">Selisih (B - A)</th>
+                                <th class="p-3 text-center">Perubahan (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weeklyComparisonTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analisis Otomatis Mingguan -->
+            <div class="bg-sky-50 border border-sky-200 p-4 sm:p-5 rounded-2xl space-y-2 text-xs text-sky-900">
+                <h4 class="font-bold uppercase tracking-wide flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-sky-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Ringkasan Analisis Perbandingan Mingguan Ovikids
+                </h4>
+                <p id="weeklyComparisonSummaryText" class="text-xs text-sky-800 leading-relaxed">
+                    Pilih rentang tanggal mingguan di atas untuk melihat analisis komparasi akumulasi secara otomatis.
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ================= MODAL LOGIN ADMIN ================= -->
+    <div id="adminLoginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 space-y-4 border border-slate-200">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    Autentikasi Admin Cloud
+                </h3>
+                <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold p-1">✕</button>
+            </div>
+            <p class="text-xs text-slate-600">Masukkan kode PIN akses admin untuk mengonfigurasi GAS endpoint.</p>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Kode PIN Admin</label>
+                <input type="password" id="adminPinInput" placeholder="Masukkan PIN" class="w-full text-xs px-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <p id="loginErrorMsg" class="text-[11px] text-red-500 mt-1 hidden">Kode PIN salah! Coba lagi.</p>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeLoginModal()" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700">Batal</button>
+                <button onclick="verifyAdminPin()" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-white shadow">Masuk Admin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL PANEL KONTROL ADMIN ================= -->
+    <div id="adminPanelModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-5 sm:p-6 space-y-4 border border-slate-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-sky-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Panel Kontrol Admin Cloud
+                </h3>
+                <button onclick="closeAdminPanel()" class="text-slate-400 hover:text-slate-600 text-sm font-bold p-1">✕</button>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">URL Web App Google Apps Script (GAS)</label>
+                    <input type="text" id="inputGasUrl" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Tautan Google Spreadsheet (Referensi)</label>
+                    <input type="text" id="inputSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div class="bg-red-50 border border-red-200 rounded-xl p-4 space-y-2">
+                    <h4 class="font-bold text-red-900 uppercase">Manajemen Cache</h4>
+                    <div class="flex gap-2 pt-1">
+                        <button onclick="clearLocalStorageCache()" class="bg-red-600 hover:bg-red-500 text-white font-semibold px-3 py-2 rounded-lg shadow transition">Hapus Cache Lokal</button>
+                        <button onclick="resetDefaultConfig()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-2 rounded-lg transition">Reset Default</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t">
+                <button onclick="closeAdminPanel()" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
+                <button onclick="saveAdminSettings()" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-sky-600 hover:bg-sky-500 text-white shadow">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script JavaScript -->
+    <script>
+        let rawLivestreamData = [];
+        let filteredData = [];
+        let mySalesChart = null;
+
+        let defaultGasUrl = "https://script.google.com/macros/s/AKfycbwAipe7V6r1B1b1aDnBi2dTTRNBihuE3uvt0qB5NBU29rK0_8tpXr0kOIyI856oeN7T/exec";
+        let defaultSheetUrl = "";
+
+        let GAS_WEB_APP_URL = localStorage.getItem('custom_gas_url') || defaultGasUrl;
+        let SHEET_SOURCE_URL = localStorage.getItem('custom_sheet_url') || defaultSheetUrl;
+        let ADMIN_PIN = "1234";
+
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
+
+        function formatRupiah(angka) {
+            return "Rp" + (angka || 0).toLocaleString('id-ID');
+        }
+
+        function cleanDate(dateStr) {
+            if (!dateStr) return "-";
+            let d = new Date(dateStr);
+            if (!isNaN(d.getTime())) {
+                let year = d.getFullYear();
+                let month = String(d.getMonth() + 1).padStart(2, '0');
+                let day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            let str = String(dateStr).trim();
+            if (str.includes('T')) return str.split('T')[0];
+            return str;
+        }
+
+        function cleanDuration(durationStr) {
+            if (!durationStr) return "-";
+            let d = new Date(durationStr);
+            if (!isNaN(d.getTime())) {
+                let hours = String(d.getUTCHours()).padStart(2, '0');
+                let minutes = String(d.getUTCMinutes()).padStart(2, '0');
+                let seconds = String(d.getUTCSeconds()).padStart(2, '0');
+                return `${hours}:${minutes}:${seconds}`;
+            }
+            let str = String(durationStr).trim();
+            if (str.includes('T') && str.includes('Z')) {
+                return str.split('T')[1].replace('Z', '').split('.')[0];
+            }
+            return str;
+        }
+
+        async function fetchSheetData() {
+            try {
+                document.getElementById('mainSubtitle').innerText = "Shopee Fashion Anak | Menghubungkan ke Cloud...";
+                const response = await fetch(GAS_WEB_APP_URL);
+                if (!response.ok) throw new Error("Gagal mengambil data dari server");
+                
+                const jsonArray = await response.json();
+                
+                rawLivestreamData = [];
+                jsonArray.forEach(row => {
+                    let dateVal = row["Tanggal"] || row["tanggal"];
+                    if (dateVal && String(dateVal).trim() !== "") {
+                        let clickRateVal = row["Klik (%)"] || row["Klik(%)"] || row["klik_persen"] || row["klik"] || "0%";
+                        let orderClickVal = row["Pesanan /Klik (%)"] || row["Pesanan/ Klik (%)"] || row["Pesanan/Klik (%)"] || row["pesanan_klik"] || "0%";
+
+                        let liveVal = row["Live (%)"] || row["Tab Live & Video"] || row["live_persen"] || row["live"] || "0%";
+                        let homeVal = row["Beranda (%)"] || row["Beranda"] || row["beranda_persen"] || row["beranda"] || "0%";
+                        let recVal = row["Rekomendasi (%)"] || row["Rekomendasi"] || row["rekomendasi_persen"] || row["rekomendasi"] || "0%";
+
+                        rawLivestreamData.push({
+                            date: cleanDate(dateVal),
+                            sales: parseFloat(row["Penjualan"] || row["penjualan"]) || 0,
+                            orders: parseInt(row["Pesanan"] || row["pesanan"]) || 0,
+                            activeViewers: parseInt(row["Penonton Aktif"] || row["Penonton aktif"] || row["penonton_aktif"]) || 0,
+                            cart: parseInt(row["Keranjang"] || row["Masuk keranjang"] || row["keranjang"]) || 0,
+                            clickRate: String(clickRateVal),
+                            orderPerClick: String(orderClickVal),
+                            watched: parseInt(row["Ditonton"] || row["ditonton"]) || 0,
+                            duration: cleanDuration(row["Durasi"] || row["durasi"]),
+                            comments: parseInt(row["Komentar"] || row["komentar"]) || 0,
+                            commentRate: String(row["Komentar (%)"] || row["komentar_persen"] || "0%"),
+                            peakViewers: parseInt(row["Puncak"] || row["Penonton Puncak"] || 0) || 0,
+                            likes: parseInt(row["Suka"] || row["Disukai"] || 0) || 0,
+                            shares: parseInt(row["Bagikan"] || row["Dibagikan"] || 0) || 0,
+                            trafficLive: String(liveVal),
+                            trafficHome: String(homeVal),
+                            trafficRec: String(recVal)
+                        });
+                    }
+                });
+
+                rawLivestreamData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                if (rawLivestreamData.length > 0) {
+                    document.getElementById('globalFilterStart').value = rawLivestreamData[0].date;
+                    document.getElementById('globalFilterEnd').value = rawLivestreamData[rawLivestreamData.length - 1].date;
+                }
+
+                applyGlobalFilter();
+
+            } catch (error) {
+                console.error("Gagal menarik data cloud:", error);
+                document.getElementById('mainSubtitle').innerText = "Shopee Fashion Anak | Gagal memuat data dari Web App.";
+            }
+        }
+
+        function applyGlobalFilter() {
+            const startDate = document.getElementById('globalFilterStart').value;
+            const endDate = document.getElementById('globalFilterEnd').value;
+
+            if (!startDate || !endDate) {
+                filteredData = [...rawLivestreamData];
+            } else {
+                filteredData = rawLivestreamData.filter(item => item.date >= startDate && item.date <= endDate);
+            }
+
+            currentSortColumn = 'date';
+            currentSortDirection = 'asc';
+            applySorting();
+            renderAllData();
+        }
+
+        function resetGlobalFilter() {
+            if (rawLivestreamData.length > 0) {
+                document.getElementById('globalFilterStart').value = rawLivestreamData[0].date;
+                document.getElementById('globalFilterEnd').value = rawLivestreamData[rawLivestreamData.length - 1].date;
+            }
+            applyGlobalFilter();
+        }
+
+        function sortTable(columnKey) {
+            if (currentSortColumn === columnKey) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = columnKey;
+                currentSortDirection = 'asc';
+            }
+
+            applySorting();
+            renderAllData();
+
+            let dirText = currentSortDirection === 'asc' ? 'Terlama/Terkecil → Terbaru/Terbesar' : 'Terbaru/Terbesar → Terlama/Terkecil';
+            document.getElementById('sortStatusIndicator').innerText = `Kolom: ${columnKey} (${dirText})`;
+        }
+
+        function applySorting() {
+            if (!currentSortColumn) return;
+
+            filteredData.sort((a, b) => {
+                let valA = a[currentSortColumn];
+                let valB = b[currentSortColumn];
+
+                if (currentSortColumn === 'clickRate' || currentSortColumn === 'orderPerClick' || currentSortColumn === 'commentRate') {
+                    valA = parseFloat(String(valA).replace('%', '').replace(',', '.')) || 0;
+                    valB = parseFloat(String(valB).replace('%', '').replace(',', '.')) || 0;
+                }
+
+                if (typeof valA === 'string') {
+                    valA = valA.toLowerCase();
+                    valB = valB.toLowerCase();
+                    if (currentSortColumn === 'date') {
+                        valA = new Date(a[currentSortColumn]);
+                        valB = new Date(b[currentSortColumn]);
+                    }
+                }
+
+                if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function openAdminModal() {
+            document.getElementById('adminLoginModal').classList.remove('hidden');
+            document.getElementById('adminPinInput').value = '';
+            document.getElementById('loginErrorMsg').classList.add('hidden');
+        }
+
+        function closeLoginModal() { document.getElementById('adminLoginModal').classList.add('hidden'); }
+
+        function verifyAdminPin() {
+            if (document.getElementById('adminPinInput').value === ADMIN_PIN) {
+                closeLoginModal();
+                document.getElementById('inputGasUrl').value = GAS_WEB_APP_URL;
+                document.getElementById('inputSheetUrl').value = SHEET_SOURCE_URL;
+                document.getElementById('adminPanelModal').classList.remove('hidden');
+            } else {
+                document.getElementById('loginErrorMsg').classList.remove('hidden');
+            }
+        }
+
+        function closeAdminPanel() { document.getElementById('adminPanelModal').classList.add('hidden'); }
+
+        function saveAdminSettings() {
+            const newGas = document.getElementById('inputGasUrl').value.trim();
+            const newSheet = document.getElementById('inputSheetUrl').value.trim();
+            if (newGas) {
+                GAS_WEB_APP_URL = newGas;
+                localStorage.setItem('custom_gas_url', newGas);
+            }
+            if (newSheet !== undefined) {
+                SHEET_SOURCE_URL = newSheet;
+                localStorage.setItem('custom_sheet_url', newSheet);
+            }
+            closeAdminPanel();
+            alert("Pengaturan berhasil disimpan! Menyegarkan data...");
+            fetchSheetData();
+        }
+
+        function clearLocalStorageCache() {
+            if (confirm("Hapus seluruh cache lokal browser?")) {
+                localStorage.clear();
+                alert("Cache dibersihkan.");
+                location.reload();
+            }
+        }
+
+        function resetDefaultConfig() {
+            if (confirm("Reset pengaturan ke default?")) {
+                localStorage.removeItem('custom_gas_url');
+                localStorage.removeItem('custom_sheet_url');
+                GAS_WEB_APP_URL = defaultGasUrl;
+                closeAdminPanel();
+                fetchSheetData();
+            }
+        }
+
+        function renderAllData() {
+            updateSubtitleAndLabels();
+            renderTableTab1();
+            renderTableTab2();
+            renderTableTab3();
+            updateSummaryCards();
+            updateChart();
+            updateReportData();
+            setDefaultCalendarDates();
+            runComparison();
+            runWeeklyComparison();
+        }
+
+        function updateSubtitleAndLabels() {
+            let count = filteredData.length;
+            let subtitleText = "Shopee Fashion Anak | ";
+            if (count > 0) {
+                let firstDate = filteredData[0].date;
+                let lastDate = filteredData[filteredData.length - 1].date;
+                subtitleText += `${firstDate} s/d ${lastDate} | ${count} sesi Livestream aktif`;
+            } else {
+                subtitleText += "Tidak ada sesi dalam rentang tanggal";
+            }
+            document.getElementById('mainSubtitle').innerText = subtitleText;
+
+            document.getElementById('labelCountSales').innerText = `akumulasi ${count} sesi`;
+            document.getElementById('labelCountOrders').innerText = `akumulasi ${count} sesi`;
+            document.getElementById('labelCountViewers').innerText = `akumulasi ${count} sesi`;
+            document.getElementById('labelCountCart').innerText = `akumulasi ${count} sesi`;
+            document.getElementById('labelCountWatched').innerText = `akumulasi ${count} sesi`;
+            document.getElementById('labelCountComments').innerText = `akumulasi ${count} sesi`;
+        }
+
+        function renderTableTab1() {
+            const tbody = document.getElementById('tableBodyTab1');
+            tbody.innerHTML = '';
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-slate-400 italic">Tidak ada data pada rentang tanggal ini.</td></tr>`;
+                return;
+            }
+
+            let tSales = 0, tOrders = 0, tViewers = 0, tCart = 0, tWatched = 0, tComments = 0;
+            let sClick = 0, sOrderClick = 0, sCommentRate = 0;
+
+            filteredData.forEach(item => {
+                tSales += item.sales; tOrders += item.orders; tViewers += item.activeViewers;
+                tCart += item.cart; tWatched += item.watched; tComments += item.comments;
+                sClick += parseFloat(item.clickRate) || 0; sOrderClick += parseFloat(item.orderPerClick) || 0; sCommentRate += parseFloat(item.commentRate) || 0;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-semibold text-slate-900">${item.date}</td>
+                        <td class="p-3 font-semibold text-blue-600">${formatRupiah(item.sales)}</td>
+                        <td class="p-3 text-center">${item.orders}</td>
+                        <td class="p-3 text-center">${item.activeViewers.toLocaleString('id-ID')}</td>
+                        <td class="p-3 text-center">${item.cart.toLocaleString('id-ID')}</td>
+                        <td class="p-3 text-center">${item.clickRate}</td>
+                        <td class="p-3 text-center">${item.orderPerClick}</td>
+                        <td class="p-3 text-center">${item.watched.toLocaleString('id-ID')}</td>
+                        <td class="p-3 text-center">${item.duration}</td>
+                        <td class="p-3 text-center">${item.comments}</td>
+                        <td class="p-3 text-center">${item.commentRate}</td>
+                    </tr>
+                `;
+            });
+
+            let count = filteredData.length;
+            tbody.innerHTML += `
+                <tr class="summary-row border-t-2 border-slate-200">
+                    <td class="p-3 text-slate-900">JUMLAH</td>
+                    <td class="p-3 text-blue-600">${formatRupiah(tSales)}</td>
+                    <td class="p-3 text-center">${tOrders}</td>
+                    <td class="p-3 text-center">${tViewers.toLocaleString('id-ID')}</td>
+                    <td class="p-3 text-center">${tCart.toLocaleString('id-ID')}</td>
+                    <td class="p-3 text-center">-</td><td class="p-3 text-center">-</td>
+                    <td class="p-3 text-center">${tWatched.toLocaleString('id-ID')}</td>
+                    <td class="p-3 text-center">-</td>
+                    <td class="p-3 text-center">${tComments.toLocaleString('id-ID')}</td>
+                    <td class="p-3 text-center">-</td>
+                </tr>
+            `;
+
+            tbody.innerHTML += `
+                <tr class="average-row border-t border-slate-200 text-amber-900">
+                    <td class="p-3">RATA-RATA</td>
+                    <td class="p-3">${formatRupiah(Math.round(tSales / count))}</td>
+                    <td class="p-3 text-center">${(tOrders / count).toFixed(1)}</td>
+                    <td class="p-3 text-center">${(tViewers / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">${(tCart / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">${(sClick / count).toFixed(2).replace('.', ',')}%</td>
+                    <td class="p-3 text-center">${(sOrderClick / count).toFixed(2).replace('.', ',')}%</td>
+                    <td class="p-3 text-center">${(tWatched / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">-</td>
+                    <td class="p-3 text-center">${(tComments / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">${(sCommentRate / count).toFixed(2).replace('.', ',')}%</td>
+                </tr>
+            `;
+        }
+
+        function renderTableTab2() {
+            const tbody2 = document.getElementById('tableBodyTab2');
+            const tbody2Traffic = document.getElementById('tableBodyTab2Traffic');
+            tbody2.innerHTML = '';
+            tbody2Traffic.innerHTML = '';
+            if (filteredData.length === 0) return;
+
+            let tSales = 0, tOrders = 0, tViewers = 0, tCart = 0, tWatched = 0, tComments = 0;
+            let sClick = 0, sOrderClick = 0, sCommentRate = 0;
+            let tPeak = 0, tLikes = 0, tShares = 0;
+            let sumLive = 0, sumHome = 0, sumRec = 0;
+            let count = filteredData.length;
+
+            filteredData.forEach(item => {
+                tSales += item.sales; tOrders += item.orders; tViewers += item.activeViewers;
+                tCart += item.cart; tWatched += item.watched; tComments += item.comments;
+                sClick += parseFloat(item.clickRate) || 0; sOrderClick += parseFloat(item.orderPerClick) || 0; sCommentRate += parseFloat(item.commentRate) || 0;
+                tPeak += item.peakViewers; tLikes += item.likes; tShares += item.shares;
+                
+                sumLive += parseFloat(String(item.trafficLive).replace('%', '').replace(',', '.')) || 0;
+                sumHome += parseFloat(String(item.trafficHome).replace('%', '').replace(',', '.')) || 0;
+                sumRec += parseFloat(String(item.trafficRec).replace('%', '').replace(',', '.')) || 0;
+
+                tbody2.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-semibold text-slate-900">${item.date}</td>
+                        <td class="p-3 font-semibold text-blue-600">${formatRupiah(item.sales)}</td>
+                        <td class="p-3 text-center">${item.orders}</td>
+                        <td class="p-3 text-center">${item.activeViewers.toLocaleString('id-ID')}</td>
+                        <td class="p-3 text-center">${item.cart.toLocaleString('id-ID')}</td>
+                        <td class="p-3 text-center">${item.clickRate}</td>
+                        <td class="p-3 text-center">${item.orderPerClick}</td>
+                        <td class="p-3 text-center">${item.watched.toLocaleString('id-ID')}</td>
+                        <td class="p-3 text-center">${item.duration}</td>
+                        <td class="p-3 text-center">${item.comments}</td>
+                        <td class="p-3 text-center">${item.commentRate}</td>
+                    </tr>
+                `;
+
+                tbody2Traffic.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-semibold text-slate-900">${item.date}</td>
+                        <td class="p-3 text-center">${item.peakViewers}</td>
+                        <td class="p-3 text-center">${item.likes.toLocaleString('id-ID')}</td>
+                        <td class="p-3 text-center">${item.shares}</td>
+                        <td class="p-3 text-center">${item.trafficLive}</td>
+                        <td class="p-3 text-center">${item.trafficHome}</td>
+                        <td class="p-3 text-center">${item.trafficRec}</td>
+                    </tr>
+                `;
+            });
+
+            tbody2.innerHTML += `
+                <tr class="average-row border-t border-slate-200 text-amber-900">
+                    <td class="p-3">Rata-rata</td>
+                    <td class="p-3">${formatRupiah(Math.round(tSales / count))}</td>
+                    <td class="p-3 text-center">${(tOrders / count).toFixed(1)}</td>
+                    <td class="p-3 text-center">${(tViewers / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">${(tCart / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">${(sClick / count).toFixed(2).replace('.', ',')}%</td>
+                    <td class="p-3 text-center">${(sOrderClick / count).toFixed(2).replace('.', ',')}%</td>
+                    <td class="p-3 text-center">${(tWatched / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">-</td>
+                    <td class="p-3 text-center">${(tComments / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">${(sCommentRate / count).toFixed(2).replace('.', ',')}%</td>
+                </tr>
+            `;
+
+            let avgLive = (sumLive / count).toFixed(2);
+            let avgHome = (sumHome / count).toFixed(2);
+            let avgRec = (sumRec / count).toFixed(2);
+
+            tbody2Traffic.innerHTML += `
+                <tr class="average-row border-t border-slate-200 text-amber-900">
+                    <td class="p-3">Rata-rata</td>
+                    <td class="p-3 text-center">${(tPeak / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">${(tLikes / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">${(tShares / count).toFixed(1).replace('.', ',')}</td>
+                    <td class="p-3 text-center">${avgLive.replace('.', ',')}%</td>
+                    <td class="p-3 text-center">${avgHome.replace('.', ',')}%</td>
+                    <td class="p-3 text-center">${avgRec.replace('.', ',')}%</td>
+                </tr>
+            `;
+        }
+
+        function renderTableTab3() {
+            if (filteredData.length === 0) return;
+            let count = filteredData.length;
+            let sumSales = filteredData.reduce((a, b) => a + b.sales, 0);
+            let sumOrders = filteredData.reduce((a, b) => a + b.orders, 0);
+            let sumViewers = filteredData.reduce((a, b) => a + b.activeViewers, 0);
+            let sumCart = filteredData.reduce((a, b) => a + b.cart, 0);
+            let sumWatched = filteredData.reduce((a, b) => a + b.watched, 0);
+            let sumComments = filteredData.reduce((a, b) => a + b.comments, 0);
+            let sumLikes = filteredData.reduce((a, b) => a + b.likes, 0);
+            let sumShares = filteredData.reduce((a, b) => a + b.shares, 0);
+            let sumPeak = filteredData.reduce((a, b) => a + b.peakViewers, 0);
+
+            let sumLive = 0, sumHome = 0, sumRec = 0;
+            filteredData.forEach(item => {
+                sumLive += parseFloat(String(item.trafficLive).replace('%', '').replace(',', '.')) || 0;
+                sumHome += parseFloat(String(item.trafficHome).replace('%', '').replace(',', '.')) || 0;
+                sumRec += parseFloat(String(item.trafficRec).replace('%', '').replace(',', '.')) || 0;
+            });
+
+            document.getElementById('tableAvgMain').innerHTML = `
+                <tr><td class="p-3 font-medium">Penjualan</td><td class="p-3 font-semibold text-blue-600">${formatRupiah(Math.round(sumSales / count))}</td><td class="p-3 text-slate-500">Rupiah per sesi</td></tr>
+                <tr><td class="p-3 font-medium">Pesanan</td><td class="p-3 font-semibold">${(sumOrders / count).toFixed(1)}</td><td class="p-3 text-slate-500">pesanan per sesi</td></tr>
+                <tr><td class="p-3 font-medium">Penonton aktif</td><td class="p-3 font-semibold">${(sumViewers / count).toFixed(1)}</td><td class="p-3 text-slate-500">akun/penonton aktif</td></tr>
+                <tr><td class="p-3 font-medium">Masuk keranjang</td><td class="p-3 font-semibold">${(sumCart / count).toFixed(1)}</td><td class="p-3 text-slate-500">per sesi</td></tr>
+                <tr><td class="p-3 font-medium">Ditonton</td><td class="p-3 font-semibold">${(sumWatched / count).toFixed(1)}</td><td class="p-3 text-slate-500">tayangan per sesi</td></tr>
+                <tr><td class="p-3 font-medium">Komentar</td><td class="p-3 font-semibold">${(sumComments / count).toFixed(1)}</td><td class="p-3 text-slate-500">komentar per sesi</td></tr>
+            `;
+
+            document.getElementById('tableAvgTraffic').innerHTML = `
+                <tr><td class="p-3 font-medium">Penonton puncak</td><td class="p-3 font-semibold">${(sumPeak / count).toFixed(1)}</td><td class="p-3 text-slate-500">rata-rata angka puncak per sesi</td></tr>
+                <tr><td class="p-3 font-medium">Disukai</td><td class="p-3 font-semibold">${(sumLikes / count).toFixed(1)}</td><td class="p-3 text-slate-500">suka per sesi</td></tr>
+                <tr><td class="p-3 font-medium">Dibagikan</td><td class="p-3 font-semibold">${(sumShares / count).toFixed(1)}</td><td class="p-3 text-slate-500">bagikan per sesi</td></tr>
+                <tr><td class="p-3 font-medium">Tab Live & Video</td><td class="p-3 font-semibold">${(sumLive / count).toFixed(2).replace('.', ',')}%</td><td class="p-3 text-slate-500">rata-rata persentase trafik</td></tr>
+                <tr><td class="p-3 font-medium">Beranda</td><td class="p-3 font-semibold">${(sumHome / count).toFixed(2).replace('.', ',')}%</td><td class="p-3 text-slate-500">rata-rata persentase trafik</td></tr>
+                <tr><td class="p-3 font-medium">Rekomendasi</td><td class="p-3 font-semibold">${(sumRec / count).toFixed(2).replace('.', ',')}%</td><td class="p-3 text-slate-500">rata-rata persentase trafik</td></tr>
+            `;
+        }
+
+        function updateSummaryCards() {
+            if (filteredData.length === 0) return;
+            let totalSales = 0, totalOrders = 0, totalViewers = 0, totalCart = 0, totalWatched = 0, totalComments = 0, totalLikes = 0, totalShares = 0, totalPeak = 0;
+            let sumLive = 0, sumHome = 0, sumRec = 0;
+
+            filteredData.forEach(item => {
+                totalSales += item.sales; totalOrders += item.orders; totalViewers += item.activeViewers;
+                totalCart += item.cart; totalWatched += item.watched; totalComments += item.comments;
+                totalLikes += item.likes; totalShares += item.shares; totalPeak += item.peakViewers;
+
+                sumLive += parseFloat(String(item.trafficLive).replace('%', '').replace(',', '.')) || 0;
+                sumHome += parseFloat(String(item.trafficHome).replace('%', '').replace(',', '.')) || 0;
+                sumRec += parseFloat(String(item.trafficRec).replace('%', '').replace(',', '.')) || 0;
+            });
+
+            let count = filteredData.length;
+            document.getElementById('sumSales').innerText = formatRupiah(totalSales);
+            document.getElementById('sumOrders').innerText = totalOrders.toLocaleString('id-ID');
+            document.getElementById('sumViewers').innerText = totalViewers.toLocaleString('id-ID');
+            document.getElementById('sumCart').innerText = totalCart.toLocaleString('id-ID');
+            document.getElementById('sumWatched').innerText = totalWatched.toLocaleString('id-ID');
+            document.getElementById('sumComments').innerText = totalComments.toLocaleString('id-ID');
+
+            document.getElementById('avgPeakViewers').innerText = (totalPeak / count).toFixed(1).replace('.', ',');
+            document.getElementById('totalLikes').innerText = totalLikes.toLocaleString('id-ID');
+            document.getElementById('avgLikes').innerText = (totalLikes / count).toFixed(1).replace('.', ',');
+            document.getElementById('totalShares').innerText = totalShares.toLocaleString('id-ID');
+            document.getElementById('avgShares').innerText = (totalShares / count).toFixed(1).replace('.', ',');
+
+            let avgLiveVal = (sumLive / count).toFixed(2);
+            let avgHomeVal = (sumHome / count).toFixed(2);
+            let avgRecVal = (sumRec / count).toFixed(2);
+
+            document.getElementById('labelTrafficLive').innerText = avgLiveVal.replace('.', ',') + "%";
+            document.getElementById('barTrafficLive').style.width = Math.min(avgLiveVal, 100) + "%";
+            document.getElementById('labelTrafficHome').innerText = avgHomeVal.replace('.', ',') + "%";
+            document.getElementById('barTrafficHome').style.width = Math.min(avgHomeVal, 100) + "%";
+            document.getElementById('labelTrafficRec').innerText = avgRecVal.replace('.', ',') + "%";
+            document.getElementById('barTrafficRec').style.width = Math.min(avgRecVal, 100) + "%";
+
+            document.getElementById('cardAvgSales').innerText = formatRupiah(Math.round(totalSales / count));
+            document.getElementById('cardAvgOrders').innerText = (totalOrders / count).toFixed(1);
+            document.getElementById('cardAvgWatched').innerText = Math.round(totalWatched / count).toLocaleString('id-ID');
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            mySalesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Penjualan (Juta Rp)',
+                        data: [],
+                        backgroundColor: '#60a5fa',
+                        hoverBackgroundColor: '#3b82f6',
+                        borderRadius: 6,
+                        barThickness: 24
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            if (!mySalesChart || filteredData.length === 0) return;
+            let chartData = [...filteredData].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const labels = chartData.map(item => item.date);
+            const salesValues = chartData.map(item => item.sales / 1000000);
+
+            mySalesChart.data.labels = labels;
+            mySalesChart.data.datasets[0].data = salesValues;
+            mySalesChart.update();
+
+            if (chartData.length > 0) {
+                let maxItem = chartData.reduce((prev, curr) => (prev.sales > curr.sales) ? prev : curr);
+                let minItem = chartData.reduce((prev, curr) => (prev.sales < curr.sales) ? prev : curr);
+                document.getElementById('chartMaxSales').innerText = `Puncak omzet: ${maxItem.date} (${formatRupiah(maxItem.sales)})`;
+                document.getElementById('chartMinSales').innerText = `Terendah: ${minItem.date} (${formatRupiah(minItem.sales)})`;
+            }
+        }
+
+        function updateReportData() {
+            if (filteredData.length === 0) return;
+            let totalSales = filteredData.reduce((a, b) => a + b.sales, 0);
+            let totalOrders = filteredData.reduce((a, b) => a + b.orders, 0);
+            let count = filteredData.length;
+
+            document.getElementById('repSumSales').innerText = formatRupiah(totalSales);
+            document.getElementById('repSumOrders').innerText = totalOrders.toLocaleString('id-ID');
+            document.getElementById('repAvgSales').innerText = formatRupiah(Math.round(totalSales / count));
+            document.getElementById('repCountSessi').innerText = `Berdasarkan ${count} sesi`;
+
+            let bestItem = [...filteredData].reduce((prev, curr) => (prev.sales > curr.sales) ? prev : curr, filteredData[0]);
+            document.getElementById('repBestSession').innerText = bestItem ? bestItem.date : "-";
+            document.getElementById('repBestSales').innerText = bestItem ? formatRupiah(bestItem.sales) : "Rp0";
+
+            let insightsHtml = `
+                <div class="flex items-start gap-2.5"><span class="bg-sky-100 text-sky-700 font-bold px-2 py-0.5 rounded text-[10px]">01</span><p class="text-slate-600">Total akumulasi omzet dari ${count} sesi aktif mencapai ${formatRupiah(totalSales)}.</p></div>
+                <div class="flex items-start gap-2.5"><span class="bg-sky-100 text-sky-700 font-bold px-2 py-0.5 rounded text-[10px]">02</span><p class="text-slate-600">Sesi penjualan tertinggi tercatat pada tanggal ${bestItem ? bestItem.date : '-'} dengan perolehan ${bestItem ? formatRupiah(bestItem.sales) : 'Rp0'}.</p></div>
+                <div class="flex items-start gap-2.5"><span class="bg-sky-100 text-sky-700 font-bold px-2 py-0.5 rounded text-[10px]">03</span><p class="text-slate-600">Rata-rata pesanan per sesi dalam rentang terpilih adalah ${(totalOrders / count).toFixed(1)} pesanan.</p></div>
+            `;
+            document.getElementById('dynamicInsightsContainer').innerHTML = insightsHtml;
+        }
+
+        function setDefaultCalendarDates() {
+            if (filteredData.length < 2) return;
+            let sortedForCompare = [...filteredData].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            document.getElementById('compareDateA').value = sortedForCompare[0].date;
+            document.getElementById('compareDateB').value = sortedForCompare[1].date;
+
+            if (sortedForCompare.length >= 3) {
+                document.getElementById('weekStartA').value = sortedForCompare[0].date;
+                document.getElementById('weekEndA').value = sortedForCompare[Math.min(2, sortedForCompare.length - 1)].date;
+                document.getElementById('weekStartB').value = sortedForCompare[Math.min(3, sortedForCompare.length - 1)].date;
+                document.getElementById('weekEndB').value = sortedForCompare[sortedForCompare.length - 1].date;
+            }
+        }
+
+        function runComparison() {
+            const dateAVal = document.getElementById('compareDateA').value;
+            const dateBVal = document.getElementById('compareDateB').value;
+
+            document.getElementById('colHeaderA').innerText = dateAVal || 'Tanggal A';
+            document.getElementById('colHeaderB').innerText = dateBVal || 'Tanggal B';
+
+            const dataA = rawLivestreamData.find(item => item.date === dateAVal);
+            const dataB = rawLivestreamData.find(item => item.date === dateBVal);
+
+            const tbody = document.getElementById('comparisonTableBody');
+            tbody.innerHTML = '';
+
+            if (!dataA || !dataB) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Pilih tanggal valid di kalender untuk komparasi.</td></tr>`;
+                document.getElementById('comparisonSummaryText').innerText = "Data tidak ditemukan untuk salah satu atau kedua tanggal yang dipilih.";
+                return;
+            }
+
+            const metrics = [
+                { label: 'Penjualan (Rp)', key: 'sales', isCurrency: true },
+                { label: 'Pesanan', key: 'orders', isCurrency: false },
+                { label: 'Penonton Aktif', key: 'activeViewers', isCurrency: false },
+                { label: 'Masuk Keranjang', key: 'cart', isCurrency: false },
+                { label: 'Ditonton (Tayangan)', key: 'watched', isCurrency: false },
+                { label: 'Komentar', key: 'comments', isCurrency: false },
+                { label: 'Suka (Likes)', key: 'likes', isCurrency: false },
+                { label: 'Penonton Puncak', key: 'peakViewers', isCurrency: false }
+            ];
+
+            metrics.forEach(m => {
+                let valA = dataA[m.key] || 0;
+                let valB = dataB[m.key] || 0;
+                let diff = valB - valA;
+                let pctChange = valA !== 0 ? ((diff / valA) * 100).toFixed(2) : "0.00";
+
+                let formattedA = m.isCurrency ? formatRupiah(valA) : valA.toLocaleString('id-ID');
+                let formattedB = m.isCurrency ? formatRupiah(valB) : valB.toLocaleString('id-ID');
+                let formattedDiff = m.isCurrency ? formatRupiah(Math.abs(diff)) : Math.abs(diff).toLocaleString('id-ID');
+                
+                if (diff < 0) formattedDiff = "-" + formattedDiff;
+                else if (diff > 0) formattedDiff = "+" + formattedDiff;
+
+                let badgeColor = diff > 0 ? "text-emerald-600 bg-emerald-50" : (diff < 0 ? "text-rose-600 bg-rose-50" : "text-slate-600 bg-slate-100");
+                let pctDisplay = (diff > 0 ? "+" : "") + pctChange.replace('.', ',') + "%";
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-medium text-slate-900">${m.label}</td>
+                        <td class="p-3 text-center bg-sky-50/50 font-semibold text-slate-800">${formattedA}</td>
+                        <td class="p-3 text-center bg-indigo-50/50 font-semibold text-slate-800">${formattedB}</td>
+                        <td class="p-3 text-center font-bold ${badgeColor}">${formattedDiff}</td>
+                        <td class="p-3 text-center font-bold ${badgeColor}">${pctDisplay}</td>
+                    </tr>
+                `;
+            });
+
+            let salesDiff = dataB.sales - dataA.sales;
+            let salesPct = dataA.sales !== 0 ? ((salesDiff / dataA.sales) * 100).toFixed(1) : 0;
+            let direction = salesDiff >= 0 ? "meningkat sebesar" : "mengalami penurunan sebesar";
+            
+            document.getElementById('comparisonSummaryText').innerHTML = `
+                Perbandingan performa Ovikids antara tanggal <strong class="text-sky-950 font-bold">${dateAVal}</strong> dan <strong class="text-sky-950 font-bold">${dateBVal}</strong> mencatat bahwa nilai penjualan ${direction} <strong class="font-bold">${formatRupiah(Math.abs(salesDiff))} (${Math.abs(salesPct)}%)</strong>. Total pesanan pada ${dateBVal} adalah <strong class="font-bold">${dataB.orders}</strong> pesanan dibandingkan dengan <strong class="font-bold">${dataA.orders}</strong> pesanan pada ${dateAVal}.
+            `;
+        }
+
+        function runWeeklyComparison() {
+            const startA = document.getElementById('weekStartA').value;
+            const endA = document.getElementById('weekEndA').value;
+            const startB = document.getElementById('weekStartB').value;
+            const endB = document.getElementById('weekEndB').value;
+
+            document.getElementById('weeklyHeaderA').innerText = (startA && endA) ? `${startA} s/d ${endA}` : 'Minggu A';
+            document.getElementById('weeklyHeaderB').innerText = (startB && endB) ? `${startB} s/d ${endB}` : 'Minggu B';
+
+            const tbody = document.getElementById('weeklyComparisonTableBody');
+            tbody.innerHTML = '';
+
+            if (!startA || !endA || !startB || !endB) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Pilih rentang tanggal lengkap untuk Mingguan A dan B.</td></tr>`;
+                document.getElementById('weeklyComparisonSummaryText').innerText = "Rentang tanggal belum lengkap dipilih.";
+                return;
+            }
+
+            const listA = rawLivestreamData.filter(item => item.date >= startA && item.date <= endA);
+            const listB = rawLivestreamData.filter(item => item.date >= startB && item.date <= endB);
+
+            const sumMetric = (arr, key) => arr.reduce((acc, curr) => acc + (curr[key] || 0), 0);
+            const avgMetric = (arr, key) => arr.length > 0 ? (sumMetric(arr, key) / arr.length) : 0;
+
+            const aggA = {
+                sales: sumMetric(listA, 'sales'),
+                orders: sumMetric(listA, 'orders'),
+                activeViewers: sumMetric(listA, 'activeViewers'),
+                cart: sumMetric(listA, 'cart'),
+                watched: sumMetric(listA, 'watched'),
+                comments: sumMetric(listA, 'comments'),
+                likes: sumMetric(listA, 'likes'),
+                peakViewers: avgMetric(listA, 'peakViewers')
+            };
+
+            const aggB = {
+                sales: sumMetric(listB, 'sales'),
+                orders: sumMetric(listB, 'orders'),
+                activeViewers: sumMetric(listB, 'activeViewers'),
+                cart: sumMetric(listB, 'cart'),
+                watched: sumMetric(listB, 'watched'),
+                comments: sumMetric(listB, 'comments'),
+                likes: sumMetric(listB, 'likes'),
+                peakViewers: avgMetric(listB, 'peakViewers')
+            };
+
+            const metrics = [
+                { label: 'Akumulasi Penjualan (Rp)', key: 'sales', isCurrency: true },
+                { label: 'Total Pesanan', key: 'orders', isCurrency: false },
+                { label: 'Akumulasi Penonton Aktif', key: 'activeViewers', isCurrency: false },
+                { label: 'Akumulasi Masuk Keranjang', key: 'cart', isCurrency: false },
+                { label: 'Total Ditonton (Tayangan)', key: 'watched', isCurrency: false },
+                { label: 'Total Komentar', key: 'comments', isCurrency: false },
+                { label: 'Total Suka (Likes)', key: 'likes', isCurrency: false },
+                { label: 'Rata-rata Penonton Puncak', key: 'peakViewers', isCurrency: false }
+            ];
+
+            metrics.forEach(m => {
+                let valA = aggA[m.key] || 0;
+                let valB = aggB[m.key] || 0;
+                let diff = valB - valA;
+                let pctChange = valA !== 0 ? ((diff / valA) * 100).toFixed(2) : "0.00";
+
+                let formattedA = m.isCurrency ? formatRupiah(valA) : (Number.isInteger(valA) ? valA.toLocaleString('id-ID') : valA.toFixed(1));
+                let formattedB = m.isCurrency ? formatRupiah(valB) : (Number.isInteger(valB) ? valB.toLocaleString('id-ID') : valB.toFixed(1));
+                let formattedDiff = m.isCurrency ? formatRupiah(Math.abs(diff)) : (Number.isInteger(Math.abs(diff)) ? Math.abs(diff).toLocaleString('id-ID' ): Math.abs(diff).toFixed(1));
+                
+                if (diff < 0) formattedDiff = "-" + formattedDiff;
+                else if (diff > 0) formattedDiff = "+" + formattedDiff;
+
+                let badgeColor = diff > 0 ? "text-emerald-600 bg-emerald-50" : (diff < 0 ? "text-rose-600 bg-rose-50" : "text-slate-600 bg-slate-100");
+                let pctDisplay = (diff > 0 ? "+" : "") + pctChange.replace('.', ',') + "%";
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-medium text-slate-900">${m.label}</td>
+                        <td class="p-3 text-center bg-sky-50/50 font-semibold text-slate-800">${formattedA}</td>
+                        <td class="p-3 text-center bg-indigo-50/50 font-semibold text-slate-800">${formattedB}</td>
+                        <td class="p-3 text-center font-bold ${badgeColor}">${formattedDiff}</td>
+                        <td class="p-3 text-center font-bold ${badgeColor}">${pctDisplay}</td>
+                    </tr>
+                `;
+            });
+
+            let salesDiff = aggB.sales - aggA.sales;
+            let salesPct = aggA.sales !== 0 ? ((salesDiff / aggA.sales) * 100).toFixed(1) : 0;
+            let direction = salesDiff >= 0 ? "meningkat sebesar" : "mengalami penurunan sebesar";
+
+            document.getElementById('weeklyComparisonSummaryText').innerHTML = `
+                Komparasi akumulasi mingguan Ovikids antara rentang <strong class="text-sky-950 font-bold">${startA} s/d ${endA}</strong> (Minggu A) dan <strong class="text-sky-950 font-bold">${startB} s/d ${endB}</strong> (Minggu B) menunjukkan total penjualan ${direction} <strong class="font-bold">${formatRupiah(Math.abs(salesDiff))} (${Math.abs(salesPct)}%)</strong>. Total pesanan pada Minggu B tercatat sebanyak <strong class="font-bold">${aggB.orders}</strong> pesanan dibandingkan <strong class="font-bold">${aggA.orders}</strong> pesanan pada Minggu A.
+            `;
+        }
+
+        function switchTab(tabNumber) {
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById(`tabContent${i}`).classList.add('hidden');
+                document.getElementById(`tabBtn${i}`).className = "tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white whitespace-nowrap transition cursor-pointer shrink-0";
+            }
+            document.getElementById(`tabContent${tabNumber}`).classList.remove('hidden');
+            document.getElementById(`tabBtn${tabNumber}`).className = "tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-600 text-white whitespace-nowrap transition shadow cursor-pointer shrink-0";
+
+            const titles = {
+                1: "OVIKIDS — DASHBOARD KINERJA LIVESTREAM SHOPEE",
+                2: "DASHBOARD HARIAN & RATA-RATA OVIKIDS",
+                3: "RATA-RATA KINERJA LIVESTREAM OVIKIDS",
+                4: "LAPORAN KINERJA LIVESTREAM OVIKIDS",
+                5: "KOMPARASI KINERJA ANTAR HARI OVIKIDS",
+                6: "KOMPARASI KINERJA MINGGUAN OVIKIDS"
+            };
+            document.getElementById('headerTitle').innerText = titles[tabNumber];
+
+            if(tabNumber === 4 && mySalesChart) mySalesChart.resize();
+        }
+
+        window.onload = function() {
+            initChart();
+            fetchSheetData();
+        };
+    </script>
+</body>
+</html>
